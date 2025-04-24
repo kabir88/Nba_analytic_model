@@ -1,0 +1,9 @@
+services:
+  - type: web
+    name: nba-analytics-dashboard
+    env: python
+    buildCommand: pip install -r requirements.txt
+    startCommand: python simple_http_server.py
+    envVars:
+      - key: PORT
+        value: 2000
