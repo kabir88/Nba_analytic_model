@@ -836,18 +836,18 @@ class NBADataService:
             return f"{now.year-1}-{str(now.year)[-2:]}"
     
     def get_boxscore(self, game_id, refresh=False):
-    collection_name = f"boxscore_{game_id}"
-    if not refresh:
-        stored = self.db_manager.retrieve_data(collection_name)
-        if not stored.empty:
-            logger.info(f"Retrieved boxscore for game {game_id}")
-            return stored
+        collection_name = f"boxscore_{game_id}"
+        if not refresh:
+            stored = self.db_manager.retrieve_data(collection_name)
+            if not stored.empty:
+                logger.info(f"Retrieved boxscore for game {game_id}")
+                return stored
 
-    def fetch():
-        return boxscoretraditionalv2.BoxScoreTraditionalV2(game_id=game_id).get_data_frames()[0]
+        def fetch():
+            return boxscoretraditionalv2.BoxScoreTraditionalV2(game_id=game_id).get_data_frames()[0]
 
-    boxscore_df = self._retry_fetch(fetch)
-    if not boxscore_df.empty:
-        self.db_manager.store_data(collection_name, boxscore_df)
-        logger.info(f"Stored boxscore for game {game_id}")
-    return boxscore_df
+        boxscore_df = self._retry_fetch(fetch)
+        if not boxscore_df.empty:
+            self.db_manager.store_data(collection_name, boxscore_df)
+            logger.info(f"Stored boxscore for game {game_id}")
+        return boxscore_df
