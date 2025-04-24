@@ -36,7 +36,7 @@ class NBADataService:
         self.db_manager = db_manager
         
     def _handle_rate_limit(self):
-        time.sleep(1)
+        time.sleep(5)
         
     def preprocess_player_game_logs(self, game_logs: pd.DataFrame) -> pd.DataFrame:
         logger.info("Starting advanced preprocessing of player game logs")
