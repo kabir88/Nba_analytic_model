@@ -615,140 +615,140 @@ class NBADataService:
     
     def get_teams(self, refresh=False):
         collection_name = "nba_teams"
-    if not refresh:
-        stored_teams = self.db_manager.retrieve_data(collection_name)
-        if not stored_teams.empty:
-            logger.info(f"Retrieved {len(stored_teams)} teams from database")
-            return stored_teams
+        if not refresh:
+            stored_teams = self.db_manager.retrieve_data(collection_name)
+            if not stored_teams.empty:
+                logger.info(f"Retrieved {len(stored_teams)} teams from database")
+                return stored_teams
 
-    def fetch():
-        return pd.DataFrame(teams.get_teams())
+        def fetch():
+            return pd.DataFrame(teams.get_teams())
 
-    teams_df = self._retry_fetch(fetch)
-    if not teams_df.empty:
-        self.db_manager.store_data(collection_name, teams_df)
-        logger.info(f"Stored {len(teams_df)} teams in database")
-    return teams_df
+        teams_df = self._retry_fetch(fetch)
+        if not teams_df.empty:
+            self.db_manager.store_data(collection_name, teams_df)
+            logger.info(f"Stored {len(teams_df)} teams in database")
+        return teams_df
             
-   def get_players(self, team_id=None, refresh=False):
-       collection_name = f"team_{team_id}_players" if team_id else "nba_players"
-    query = {}
+    def get_players(self, team_id=None, refresh=False):
+        collection_name = f"team_{team_id}_players" if team_id else "nba_players"
+        query = {}
 
-    if not refresh:
-        stored_players = self.db_manager.retrieve_data(collection_name, query)
-        if not stored_players.empty:
-            logger.info(f"Retrieved {len(stored_players)} players from database")
-            return stored_players
+        if not refresh:
+            stored_players = self.db_manager.retrieve_data(collection_name, query)
+            if not stored_players.empty:
+                logger.info(f"Retrieved {len(stored_players)} players from database")
+                return stored_players
 
-    def fetch():
-        if team_id:
-            roster = commonteamroster.CommonTeamRoster(team_id=team_id)
-            return roster.get_data_frames()[0]
-        else:
-            return pd.DataFrame(players.get_players())
+        def fetch():
+            if team_id:
+                roster = commonteamroster.CommonTeamRoster(team_id=team_id)
+                return roster.get_data_frames()[0]
+            else:
+                return pd.DataFrame(players.get_players())
 
-    players_data = self._retry_fetch(fetch)
-    if not players_data.empty:
-        self.db_manager.store_data(collection_name, players_data)
-        logger.info(f"Stored {len(players_data)} players in database")
-    return players_data
+        players_data = self._retry_fetch(fetch)
+        if not players_data.empty:
+            self.db_manager.store_data(collection_name, players_data)
+            logger.info(f"Stored {len(players_data)} players in database")
+        return players_data
 
     
     def get_player_info(self, player_id, refresh=False):
-    collection_name = f"player_{player_id}_info"
-    if not refresh:
-        stored_info = self.db_manager.retrieve_data(collection_name)
-        if not stored_info.empty:
-            logger.info(f"Retrieved player info for {player_id} from database")
-            return stored_info
+        collection_name = f"player_{player_id}_info"
+        if not refresh:
+            stored_info = self.db_manager.retrieve_data(collection_name)
+            if not stored_info.empty:
+                logger.info(f"Retrieved player info for {player_id} from database")
+                return stored_info
 
-    def fetch():
-        return commonplayerinfo.CommonPlayerInfo(player_id=player_id).get_data_frames()[0]
+        def fetch():
+            return commonplayerinfo.CommonPlayerInfo(player_id=player_id).get_data_frames()[0]
 
-    info_df = self._retry_fetch(fetch)
-    if not info_df.empty:
-        self.db_manager.store_data(collection_name, info_df)
-        logger.info(f"Stored player info for {player_id} in database")
-    return info_df
+        info_df = self._retry_fetch(fetch)
+        if not info_df.empty:
+            self.db_manager.store_data(collection_name, info_df)
+            logger.info(f"Stored player info for {player_id} in database")
+        return info_df
 
     def get_player_game_logs(self, player_id, season=None, last_n_games=0, refresh=False):
-    if not season:
-        season = self.get_current_season()
-    collection_name = f"player_{player_id}_games_{season}"
+        if not season:
+            season = self.get_current_season()
+        collection_name = f"player_{player_id}_games_{season}"
 
-    if not refresh:
-        stored_games = self.db_manager.retrieve_data(collection_name)
-        if not stored_games.empty:
-            logger.info(f"Retrieved {len(stored_games)} game logs for player {player_id}")
+        if not refresh:
+            stored_games = self.db_manager.retrieve_data(collection_name)
+            if not stored_games.empty:
+                logger.info(f"Retrieved {len(stored_games)} game logs for player {player_id}")
+                if last_n_games > 0:
+                    return stored_games.sort_values('GAME_DATE', ascending=False).head(last_n_games)
+                return stored_games
+
+        def fetch():
+            logs = playergamelog.PlayerGameLog(player_id=player_id, season=season, season_type_all_star='Regular Season')
+            return self.preprocess_player_game_logs(logs.get_data_frames()[0])
+
+        games_df = self._retry_fetch(fetch)
+        if not games_df.empty:
+            self.db_manager.store_data(collection_name, games_df)
+            logger.info(f"Stored {len(games_df)} game logs for player {player_id}")
             if last_n_games > 0:
-                return stored_games.sort_values('GAME_DATE', ascending=False).head(last_n_games)
-            return stored_games
-
-    def fetch():
-        logs = playergamelog.PlayerGameLog(player_id=player_id, season=season, season_type_all_star='Regular Season')
-        return self.preprocess_player_game_logs(logs.get_data_frames()[0])
-
-    games_df = self._retry_fetch(fetch)
-    if not games_df.empty:
-        self.db_manager.store_data(collection_name, games_df)
-        logger.info(f"Stored {len(games_df)} game logs for player {player_id}")
-        if last_n_games > 0:
-            return games_df.sort_values('GAME_DATE', ascending=False).head(last_n_games)
-    return games_df
+                return games_df.sort_values('GAME_DATE', ascending=False).head(last_n_games)
+        return games_df
 
     
     def get_team_game_logs(self, team_id, season=None, last_n_games=0, refresh=False):
-    if not season:
-        season = self.get_current_season()
-    collection_name = f"team_{team_id}_games_{season}"
+        if not season:
+            season = self.get_current_season()
+        collection_name = f"team_{team_id}_games_{season}"
 
-    if not refresh:
-        stored_games = self.db_manager.retrieve_data(collection_name)
-        if not stored_games.empty:
-            logger.info(f"Retrieved {len(stored_games)} game logs for team {team_id}")
+        if not refresh:
+            stored_games = self.db_manager.retrieve_data(collection_name)
+            if not stored_games.empty:
+                logger.info(f"Retrieved {len(stored_games)} game logs for team {team_id}")
+                if last_n_games > 0:
+                    return stored_games.sort_values('GAME_DATE', ascending=False).head(last_n_games)
+                return stored_games
+
+        def fetch():
+            logs = teamgamelog.TeamGameLog(team_id=team_id, season=season, season_type_all_star='Regular Season')
+            return self.preprocess_team_game_logs(logs.get_data_frames()[0])
+
+        games_df = self._retry_fetch(fetch)
+        if not games_df.empty:
+            self.db_manager.store_data(collection_name, games_df)
+            logger.info(f"Stored {len(games_df)} game logs for team {team_id}")
             if last_n_games > 0:
-                return stored_games.sort_values('GAME_DATE', ascending=False).head(last_n_games)
-            return stored_games
-
-    def fetch():
-        logs = teamgamelog.TeamGameLog(team_id=team_id, season=season, season_type_all_star='Regular Season')
-        return self.preprocess_team_game_logs(logs.get_data_frames()[0])
-
-    games_df = self._retry_fetch(fetch)
-    if not games_df.empty:
-        self.db_manager.store_data(collection_name, games_df)
-        logger.info(f"Stored {len(games_df)} game logs for team {team_id}")
-        if last_n_games > 0:
-            return games_df.sort_values('GAME_DATE', ascending=False).head(last_n_games)
-    return games_df
+                return games_df.sort_values('GAME_DATE', ascending=False).head(last_n_games)
+        return games_df
 
     def get_recent_games(self, days=7, refresh=False):
-    collection_name = f"recent_games_{days}days"
-    end_date = datetime.now()
-    start_date = end_date - timedelta(days=days)
+        collection_name = f"recent_games_{days}days"
+        end_date = datetime.now()
+        start_date = end_date - timedelta(days=days)
 
-    if not refresh:
-        stored = self.db_manager.retrieve_data(collection_name)
-        if not stored.empty and 'GAME_DATE' in stored.columns:
-            if pd.to_datetime(stored['GAME_DATE']).max() >= start_date:
-                logger.info(f"Retrieved {len(stored)} recent games from database")
-                return stored
+        if not refresh:
+            stored = self.db_manager.retrieve_data(collection_name)
+            if not stored.empty and 'GAME_DATE' in stored.columns:
+                if pd.to_datetime(stored['GAME_DATE']).max() >= start_date:
+                    logger.info(f"Retrieved {len(stored)} recent games from database")
+                    return stored
 
-    def fetch():
-        games = leaguegamefinder.LeagueGameFinder(
-            date_from_nullable=start_date.strftime('%m/%d/%Y'),
-            date_to_nullable=end_date.strftime('%m/%d/%Y'),
-            league_id_nullable='00'
-        )
-        df = games.get_data_frames()[0]
-        df['GAME_DATE'] = pd.to_datetime(df['GAME_DATE'])
-        return self.preprocess_team_game_logs(df)
+        def fetch():
+            games = leaguegamefinder.LeagueGameFinder(
+                date_from_nullable=start_date.strftime('%m/%d/%Y'),
+                date_to_nullable=end_date.strftime('%m/%d/%Y'),
+                league_id_nullable='00'
+            )
+            df = games.get_data_frames()[0]
+            df['GAME_DATE'] = pd.to_datetime(df['GAME_DATE'])
+            return self.preprocess_team_game_logs(df)
 
-    recent_df = self._retry_fetch(fetch)
-    if not recent_df.empty:
-        self.db_manager.store_data(collection_name, recent_df)
-        logger.info(f"Stored {len(recent_df)} recent games in database")
-    return recent_df
+        recent_df = self._retry_fetch(fetch)
+        if not recent_df.empty:
+            self.db_manager.store_data(collection_name, recent_df)
+            logger.info(f"Stored {len(recent_df)} recent games in database")
+        return recent_df
 
     
     def get_season_stats(self, player_id, seasons=None, refresh=False):
