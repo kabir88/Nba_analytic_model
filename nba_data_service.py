@@ -39,6 +39,33 @@ class NBADataService:
     def _handle_rate_limit(self):
         time.sleep(5)
         
+    def _retry_fetch(self, fetch_function, max_attempts=3):
+        """
+        Retry a fetch operation with exponential backoff in case of exceptions.
+        
+        Args:
+            fetch_function: Function to call to fetch data
+            max_attempts: Maximum number of retry attempts
+            
+        Returns:
+            DataFrame with fetched data or empty DataFrame if all attempts fail
+        """
+        attempt = 0
+        while attempt < max_attempts:
+            try:
+                self._handle_rate_limit()
+                return fetch_function()
+            except Exception as e:
+                attempt += 1
+                wait_time = 2 ** attempt  # Exponential backoff
+                logger.error(f"Error fetching data (attempt {attempt}/{max_attempts}): {e}")
+                if attempt < max_attempts:
+                    logger.info(f"Waiting {wait_time} seconds before retry...")
+                    time.sleep(wait_time)
+                else:
+                    logger.error("Maximum retry attempts reached. Returning empty DataFrame.")
+                    return pd.DataFrame()
+        
     def preprocess_player_game_logs(self, game_logs: pd.DataFrame) -> pd.DataFrame:
         logger.info("Starting advanced preprocessing of player game logs")
         
