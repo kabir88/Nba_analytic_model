@@ -614,7 +614,7 @@ class NBADataService:
             return df
     
     def get_teams(self, refresh=False):
-    collection_name = "nba_teams"
+        collection_name = "nba_teams"
     if not refresh:
         stored_teams = self.db_manager.retrieve_data(collection_name)
         if not stored_teams.empty:
@@ -631,7 +631,7 @@ class NBADataService:
     return teams_df
             
    def get_players(self, team_id=None, refresh=False):
-    collection_name = f"team_{team_id}_players" if team_id else "nba_players"
+       collection_name = f"team_{team_id}_players" if team_id else "nba_players"
     query = {}
 
     if not refresh:
